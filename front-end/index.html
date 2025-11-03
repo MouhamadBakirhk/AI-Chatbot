@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini E-commerce AI</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #f8f9fa;
+    padding-top: 56px; /* height of navbar */
+}
+
+#sidebar-container .sidebar { 
+    position: fixed; top: 56px; left:0; width:200px; height:calc(100% - 56px); 
+    background:#f8f9fa; padding-top:20px; overflow-y:auto; 
+}
+
+.content { 
+    flex: 1 0 auto; /* ياخد كل المساحة المتاحة */
+    margin-left:220px; 
+    padding:20px; 
+}
+
+.product-card img { 
+    height:200px; 
+    object-fit:cover; 
+}
+
+.footer {
+    flex-shrink: 0; /* مهم عشان ما يصغر إذا كان في محتوى */
+    background-color: #3de306;
+    color: #e70b0b;
+    padding: 20px;
+    width: 75%; /* عرض الفوتر نصف الصفحة */
+    margin: 0 auto;  
+    text-align: center;  
+}
+
+#chatbot-toggle { 
+    position: fixed; bottom: 20px; right: 20px; 
+    background: #0d6efd; color: #fff; border: none; border-radius: 50%; 
+    width: 60px; height: 60px; font-size: 24px; cursor: pointer; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+#chatbot { 
+    position: fixed; bottom: 90px; right: 20px; width: 300px; height: 400px; 
+    background: #fff; border: 1px solid #ddd; border-radius: 10px; 
+    display: none; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+#chatbot-header { 
+    background: #0d6efd; color: #fff; padding: 10px; font-weight: bold; 
+    display: flex; justify-content: space-between; align-items: center; 
+    border-top-left-radius: 10px; border-top-right-radius: 10px;
+}
+
+#chatbot-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 14px; }
+#chatbot-messages p { margin: 5px 0; }
+
+#chatbot-input { display: flex; border-top: 1px solid #ddd; }
+#chatbot-input input { flex: 1; border: none; padding: 10px; font-size: 14px; }
+#chatbot-input button { background: #0d6efd; color: #fff; border: none; padding: 10px 15px; cursor: pointer; }
+
+#rating-stars span { font-size:30px; cursor:pointer; color:#ccc; }
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Mini E-commerce AI</a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="cart.html">Cart</a></li>
+        <li class="nav-item"><a class="nav-link" href="add-product.html">Add Product</a></li>
+        <li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
+        <li class="nav-item d-none" id="logoutLink"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Sidebar -->
+<div id="sidebar-container"></div>
+
+<!-- Main content -->
+<div class="content">
+    <!-- Rating Modal -->
+    <div class="modal fade" id="ratingModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">Rate Product</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div id="rating-stars">
+              <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+            </div>
+            <textarea id="rating-comment" class="form-control mt-3" placeholder="Write your comment..."></textarea>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary" id="submit-rating">Submit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" id="products"></div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <h5>Contact</h5>
+        <p>phone number :📞 +96171447501</p>
+        <p>✉ mouhamadbakir513@gmail.com</p>
+      </div>
+      <div class="col-md-4">
+        <h5>Follow Us</h5>
+        <p><a href="#">Facebook</a></p>
+        <p><a href="#">Instagram</a></p>
+        <p><a href="#">Twitter</a></p>
+      </div>
+      <div class="col-md-4">
+        <h5>Info</h5>
+        <p>📍 123 Main Street, Beirut, Lebanon</p>
+        <p>🕒 Mon-Fri 9:00 - 18:00</p>
+        <p>📧mouhamadbakir513@gmail.com</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Chatbot -->
+<div id="chatbot">
+  <div id="chatbot-header">AI Chatbot <span id="close-chat">✖</span></div>
+  <div id="chatbot-messages"></div>
+  <div id="chatbot-input">
+    <input type="text" id="userMessage" placeholder="Type a message..." />
+    <button id="sendMessage">Send</button>
+  </div>
+</div>
+<button id="chatbot-toggle">💬</button>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// --- Sidebar ---
+document.getElementById("sidebar-container").innerHTML = `
+<div class="sidebar">
+  <h5 class="px-3">Categories</h5>
+  <ul class="nav flex-column px-3">
+    <li class="nav-item"><a class="nav-link category-link" href="#" data-category="All">All Products</a></li>
+    <li class="nav-item"><a class="nav-link category-link" href="#" data-category="Electronics">Electronics</a></li>
+    <li class="nav-item"><a class="nav-link category-link" href="#" data-category="Clothes">Clothes</a></li>
+    <li class="nav-item"><a class="nav-link category-link" href="#" data-category="Books">Books</a></li>
+  </ul>
+</div>`;
+</script>
+
+ 
+
+<script src="main.js"></script>
+</body>
+</html>
+

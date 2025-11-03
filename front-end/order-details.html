@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Details - Mini E-commerce AI</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body { padding-top: 56px; background:#f8faf8; }
+.details-container { max-width:700px; margin:60px auto; padding:20px; background:#fff; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="index.html">Mini E-commerce AI</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="cart.html">Cart</a></li>
+        <li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
+        <li class="nav-item d-none" id="logoutLink">
+          <a class="nav-link" href="#" onclick="logout()">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="details-container">
+  <h3 class="mb-4 text-center">Order Details</h3>
+  <div id="orderInfo"></div>
+</div>
+
+<script>
+ const params = new URLSearchParams(window.location.search);
+const orderId = params.get('order_id');
+const token = localStorage.getItem("token");
+
+if(!orderId || !token){
+    alert("Order not found or you are not logged in.");
+    window.location.href = "index.html";
+}
+
+fetch(`http://localhost:8000/api/orders/${orderId}`, {
+    headers: { "Authorization": "Bearer " + token }
+})
+.then(res => res.json())
+.then(order => {
+    let html = `<p><strong>Order ID:</strong> ${order.id}</p>`;
+    html += `<p><strong>User:</strong> ${order.user.name}</p>`;
+    html += `<p><strong>Status:</strong> ${order.status}</p>`;
+    html += `<h5>Products:</h5><ul>`;
+    let total = 0;
+    order.items.forEach(item => {
+        let subtotal = item.price * item.quantity;
+        total += subtotal;
+        html += `<li>${item.product.name} x ${item.quantity} - $${subtotal.toFixed(2)}</li>`;
+    });
+    html += `</ul><h5>Total: $${total.toFixed(2)}</h5>`;
+    document.getElementById("orderInfo").innerHTML = html;
+})
+.catch(err => { console.error(err); alert("Failed to load order details."); });
+function parseJwt(token) {
+    try { return JSON.parse(atob(token.split('.')[1])); } 
+    catch(e) { return null; }
+}
+function isTokenValid(token) {
+    if(!token) return false;
+    const payload = parseJwt(token);
+    if(!payload || !payload.exp) return false;
+    return payload.exp > Math.floor(Date.now() / 1000);
+}
+function logout(){
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    window.location.href = "index.html";
+}
+
+window.addEventListener('load', ()=>{
+    const token = localStorage.getItem("token");
+    if(token && isTokenValid(token)){
+        document.querySelector('li.nav-item a[href="login.html"]').parentElement.classList.add("d-none");
+        document.getElementById("logoutLink").classList.remove("d-none");
+    } else {
+        document.querySelector('li.nav-item a[href="login.html"]').parentElement.classList.remove("d-none");
+        document.getElementById("logoutLink").classList.add("d-none");
+    }
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
